@@ -9,7 +9,8 @@ import java.util.*
 class LeDeviceScanner(
     private val scanner: BluetoothLeScanner,
     private val resultCallback: ResultCallback,
-    private val filterUUID: UUID? = null
+    private val filterUUID: UUID? = null,
+    private val nameFilter: String? = null
 ): Scanner {
 
     private val handler = Handler()
@@ -28,8 +29,8 @@ class LeDeviceScanner(
             super.onScanResult(callbackType, result)
             result?.device?.let {
                 if (filterUUID == null || result.scanRecord?.serviceUuids?.any { service ->
-                        service.uuid.toString() == filterUUID.toString()
-                    } == true)
+                        service.uuid.toString() == filterUUID.toString() } == true
+                    || (nameFilter != null && it.name?.startsWith(nameFilter) == true))
                     resultCallback.onLeDeviceFound(it, result.scanRecord)
             }
         }

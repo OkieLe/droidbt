@@ -2,10 +2,8 @@ package io.github.boopited.droidbt
 
 import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanRecord
 import android.content.Context
-import android.os.ParcelUuid
 import android.util.Log
 import io.github.boopited.droidbt.common.BaseManager
 import io.github.boopited.droidbt.scanner.ClassicDeviceScanner
