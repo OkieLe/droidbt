@@ -15,6 +15,7 @@ class SlaveManager(
     private val advertiseUuid: UUID
 ): BaseManager(context) {
 
+    private var bluetoothLeAdvertiser: BluetoothLeAdvertiser? = null
     private var isAdvertising = false
 
     fun isAdvertising(): Boolean {
@@ -62,14 +63,14 @@ class SlaveManager(
      * and supports the Chat Service.
      */
     private fun startAdvertising() {
-        val bluetoothLeAdvertiser: BluetoothLeAdvertiser? =
-            bluetoothAdapter.bluetoothLeAdvertiser
+        if (bluetoothLeAdvertiser == null)
+            bluetoothLeAdvertiser = bluetoothAdapter.bluetoothLeAdvertiser
 
         bluetoothLeAdvertiser?.let {
             val settings = AdvertiseSettings.Builder()
-                .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
+                .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
                 .setConnectable(true)
-                .setTimeout(0)
+                .setTimeout(30000)
                 .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
                 .build()
 
