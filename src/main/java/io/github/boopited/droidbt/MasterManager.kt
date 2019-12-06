@@ -14,7 +14,8 @@ import java.util.*
 class MasterManager(
     context: Context,
     private var deviceCallback: DeviceCallback? = null,
-    private val filterUUID: UUID? = null,
+    filterUUID: UUID? = null,
+    nameFilter: String? = null,
     private val leOnly: Boolean = true
 ) : BaseManager(context), ResultCallback {
 
@@ -31,8 +32,7 @@ class MasterManager(
 
     private var leScanner: LeDeviceScanner = LeDeviceScanner(
         bluetoothAdapter.bluetoothLeScanner,
-        this,
-        filterUUID
+        this, filterUUID, nameFilter
     )
 
     private val classicDevices: MutableSet<BluetoothDevice> = mutableSetOf()
