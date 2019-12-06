@@ -5,7 +5,10 @@ import android.content.Context
 import android.util.Log
 import java.util.*
 
-class GattClient(private val context: Context) {
+class GattClient(
+    private val context: Context,
+    private var clientCallback: GattClientCallback? = null
+) {
 
     interface GattClientCallback {
         fun onGattConnected() {}
@@ -18,35 +21,31 @@ class GattClient(private val context: Context) {
 
     private var deviceAddress: String? = null
     private var bluetoothGatt: BluetoothGatt? = null
-    private var connectionState =
-        STATE_DISCONNECTED
-    private var gattClientCallback: GattClientCallback? = null
+    private var connectionState = STATE_DISCONNECTED
 
     // Implements callback methods for GATT events that the app cares about.  For example,
     // connection change and services discovered.
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                connectionState =
-                    STATE_CONNECTED
-                gattClientCallback?.onGattConnected()
+                connectionState = STATE_CONNECTED
+                clientCallback?.onGattConnected()
                 Log.i(TAG, "Connected to GATT server.")
                 // Attempts to discover services after successful connection.
                 Log.i(TAG, "Attempting to start service discovery:")
                 bluetoothGatt?.discoverServices()
 
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                connectionState =
-                    STATE_DISCONNECTED
+                connectionState = STATE_DISCONNECTED
                 Log.i(TAG, "Disconnected from GATT server.")
-                gattClientCallback?.onGattDisconnected()
+                clientCallback?.onGattDisconnected()
                 close()
             }
         }
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                gattClientCallback?.onServiceDiscovered()
+                clientCallback?.onServiceDiscovered()
             } else {
                 Log.w(TAG, "onServicesDiscovered received: $status")
             }
@@ -58,7 +57,7 @@ class GattClient(private val context: Context) {
             status: Int
         ) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                gattClientCallback?.onDataAvailable(characteristic)
+                clientCallback?.onDataAvailable(characteristic)
             }
         }
 
@@ -66,7 +65,7 @@ class GattClient(private val context: Context) {
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
         ) {
-            gattClientCallback?.onDataAvailable(characteristic)
+            clientCallback?.onDataAvailable(characteristic)
         }
     }
 
@@ -93,8 +92,7 @@ class GattClient(private val context: Context) {
         bluetoothGatt = device.connectGatt(context, false, gattCallback)
         Log.d(TAG, "Trying to create a new connection.")
         deviceAddress = address
-        connectionState =
-            STATE_CONNECTING
+        connectionState = STATE_CONNECTING
         return true
     }
 
