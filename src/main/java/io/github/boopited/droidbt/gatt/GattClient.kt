@@ -11,10 +11,10 @@ class GattClient(
 ) {
 
     interface GattClientCallback {
-        fun onGattConnected() {}
-        fun onGattDisconnected() {}
-        fun onServiceDiscovered()
-        fun onDataAvailable(characteristic: BluetoothGattCharacteristic)
+        fun onGattConnected(gatt: BluetoothGatt) {}
+        fun onGattDisconnected(gatt: BluetoothGatt) {}
+        fun onServiceDiscovered(gatt: BluetoothGatt)
+        fun onDataAvailable(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic)
     }
 
     private val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
@@ -29,7 +29,7 @@ class GattClient(
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 connectionState = STATE_CONNECTED
-                clientCallback?.onGattConnected()
+                clientCallback?.onGattConnected(gatt)
                 Log.i(TAG, "Connected to GATT server.")
                 // Attempts to discover services after successful connection.
                 Log.i(TAG, "Attempting to start service discovery:")
@@ -38,14 +38,14 @@ class GattClient(
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 connectionState = STATE_DISCONNECTED
                 Log.i(TAG, "Disconnected from GATT server.")
-                clientCallback?.onGattDisconnected()
+                clientCallback?.onGattDisconnected(gatt)
                 close()
             }
         }
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                clientCallback?.onServiceDiscovered()
+                clientCallback?.onServiceDiscovered(gatt)
             } else {
                 Log.w(TAG, "onServicesDiscovered received: $status")
             }
@@ -57,7 +57,7 @@ class GattClient(
             status: Int
         ) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                clientCallback?.onDataAvailable(characteristic)
+                clientCallback?.onDataAvailable(gatt, characteristic)
             }
         }
 
@@ -65,7 +65,7 @@ class GattClient(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
         ) {
-            clientCallback?.onDataAvailable(characteristic)
+            clientCallback?.onDataAvailable(gatt, characteristic)
         }
     }
 
@@ -119,6 +119,10 @@ class GattClient(
         bluetoothGatt = null
     }
 
+    fun sameAs(other: BluetoothGatt): Boolean {
+        return deviceAddress == other.device.address
+    }
+
     /**
      * Request a read on a given `BluetoothGattCharacteristic`. The read result is reported
      * asynchronously through the `BluetoothGattCallback#onCharacteristicRead(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)`
@@ -142,7 +146,7 @@ class GattClient(
      */
     fun setCharacteristicNotification(
         characteristic: BluetoothGattCharacteristic,
-        descriptorId: String,
+        descriptorId: UUID,
         enabled: Boolean
     ) {
         if (bluetoothGatt == null) {
@@ -151,7 +155,7 @@ class GattClient(
         }
         bluetoothGatt?.setCharacteristicNotification(characteristic, enabled)
 
-        val descriptor = characteristic.getDescriptor(UUID.fromString(descriptorId))
+        val descriptor = characteristic.getDescriptor(descriptorId)
         descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
         bluetoothGatt?.writeDescriptor(descriptor)
     }
