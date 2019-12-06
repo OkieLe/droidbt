@@ -3,11 +3,13 @@ package io.github.boopited.droidbt.scanner
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.*
 import android.os.Handler
+import android.os.ParcelUuid
+import java.util.*
 
 class LeDeviceScanner(
     private val scanner: BluetoothLeScanner,
     private val resultCallback: ResultCallback,
-    private val scanFilters: List<ScanFilter> = emptyList()
+    private val filterUUID: UUID? = null
 ): Scanner {
 
     private val handler = Handler()
@@ -16,7 +18,7 @@ class LeDeviceScanner(
     private val scanSettings = ScanSettings.Builder()
         .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
         .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-        .setMatchMode(ScanSettings.MATCH_MODE_STICKY)
+        .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
         .apply {
             if (BluetoothAdapter.getDefaultAdapter().isOffloadedScanBatchingSupported)
                 setReportDelay(0L)
@@ -24,13 +26,20 @@ class LeDeviceScanner(
     private val scannerCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult?) {
             super.onScanResult(callbackType, result)
-            result?.device?.let { resultCallback.onLeDeviceFound(it, result.scanRecord) }
+            result?.device?.let {
+                if (filterUUID == null || result.scanRecord?.serviceUuids?.any { service ->
+                        service.uuid.toString() == filterUUID.toString()
+                    } == true)
+                    resultCallback.onLeDeviceFound(it, result.scanRecord)
+            }
         }
 
         override fun onBatchScanResults(results: MutableList<ScanResult>?) {
             super.onBatchScanResults(results)
             results?.map {
-                resultCallback.onLeDeviceFound(it.device, it.scanRecord)
+                if (filterUUID == null || it.scanRecord?.serviceUuids?.
+                        contains(ParcelUuid(filterUUID)) == true)
+                    resultCallback.onLeDeviceFound(it.device, it.scanRecord)
             }
         }
 
@@ -51,7 +60,7 @@ class LeDeviceScanner(
         if (isScanning) return
         isScanning = true
         scanner.startScan(
-            scanFilters,
+            emptyList(),
             scanSettings,
             scannerCallback
         )

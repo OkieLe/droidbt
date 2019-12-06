@@ -31,20 +31,10 @@ class MasterManager(
         this
     )
 
-    private val scanFilters = mutableListOf<ScanFilter>()
-    init {
-        filterUUID?.let {
-            val serviceFilter = ScanFilter.Builder()
-                .setServiceUuid(ParcelUuid(it))
-                .build()
-            scanFilters.add(serviceFilter)
-        }
-    }
-
     private var leScanner: LeDeviceScanner = LeDeviceScanner(
         bluetoothAdapter.bluetoothLeScanner,
         this,
-        scanFilters
+        filterUUID
     )
 
     private val classicDevices: MutableSet<BluetoothDevice> = mutableSetOf()
