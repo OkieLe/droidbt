@@ -79,6 +79,6 @@ class LeDeviceScanner(
     }
 
     companion object {
-        private const val TIMEOUT_FOR_STOP = 20000L
+        private const val TIMEOUT_FOR_STOP = 12000L
     }
 }
