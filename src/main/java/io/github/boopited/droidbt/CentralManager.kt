@@ -11,7 +11,7 @@ import io.github.boopited.droidbt.scanner.LeDeviceScanner
 import io.github.boopited.droidbt.scanner.ResultCallback
 import java.util.*
 
-class MasterManager(
+class CentralManager(
     context: Context,
     private var deviceCallback: DeviceCallback? = null,
     filterUUID: UUID? = null,

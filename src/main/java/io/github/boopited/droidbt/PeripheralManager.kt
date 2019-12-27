@@ -10,7 +10,7 @@ import android.util.Log
 import io.github.boopited.droidbt.common.BaseManager
 import java.util.*
 
-class SlaveManager(
+class PeripheralManager(
     context: Context,
     private val advertiseUuid: UUID
 ): BaseManager(context) {
