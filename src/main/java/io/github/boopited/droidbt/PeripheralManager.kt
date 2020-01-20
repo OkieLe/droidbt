@@ -92,6 +92,7 @@ class PeripheralManager(
             bluetoothAdapter.bluetoothLeAdvertiser
         bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback)
             ?: Log.w(TAG, "Failed to create advertiser")
+        isAdvertising = false
     }
 
     companion object {
