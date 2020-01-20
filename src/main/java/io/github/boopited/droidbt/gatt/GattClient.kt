@@ -73,9 +73,10 @@ class GattClient(
         // Previously connected device. Try to reconnect.
         if (deviceAddress != null && address == deviceAddress && bluetoothGatt != null) {
             Log.d(TAG, "Trying to use an existing bluetoothGatt for connection.")
-            if (bluetoothGatt?.connect() == true) {
-                connectionState =
-                    STATE_CONNECTING
+            if (connectionState == STATE_CONNECTED) {
+                return true
+            } else if (bluetoothGatt?.connect() == true) {
+                connectionState = STATE_CONNECTING
                 return true
             } else {
                 return false
