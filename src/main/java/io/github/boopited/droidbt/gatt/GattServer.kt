@@ -11,6 +11,8 @@ class GattServer(
 ) {
 
     interface GattServerCallback {
+        fun onDeviceConnected(device: BluetoothDevice)
+        fun onDeviceDisconnected(device: BluetoothDevice)
         fun isNotification(uuid: UUID): Boolean
         fun getCharacteristic(uuid: UUID): ByteArray?
         fun setCharacteristic(uuid: UUID, value: ByteArray): Boolean
@@ -35,8 +37,10 @@ class GattServer(
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 Log.i(TAG, "BluetoothDevice CONNECTED: $device")
+                serverCallback.onDeviceConnected(device)
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 Log.i(TAG, "BluetoothDevice DISCONNECTED: $device")
+                serverCallback.onDeviceDisconnected(device)
                 //Remove device from any active subscriptions
                 registeredDevices.remove(device)
             }
