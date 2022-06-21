@@ -38,7 +38,10 @@ class CentralManager(
     private val classicDevices: MutableSet<BluetoothDevice> = mutableSetOf()
     private val leDevices: MutableSet<BluetoothDevice> = mutableSetOf()
 
-    override fun onBluetoothEnabled(enable: Boolean) {
+    override fun onLogEnabled(enable: Boolean) {
+        super.onLogEnabled(enable)
+        btScanner.logEnabled = enable
+        leScanner.logEnabled = enable
     }
 
     override fun start() {
@@ -56,7 +59,7 @@ class CentralManager(
     override fun onLeDeviceFound(device: BluetoothDevice, data: ScanRecord?) {
         if (leDevices.add(device)) {
             deviceCallback?.onDeviceFound(device)
-            Log.i(TAG, "${device.name}: (${device.address})@${device.type}")
+            if (logEnabled) Log.i(TAG, "${device.name}: (${device.address})@${device.type}")
             data?.serviceUuids?.forEach {
                 Log.i(TAG, it.uuid.toString())
             }
@@ -66,12 +69,12 @@ class CentralManager(
     override fun onDeviceFound(device: BluetoothDevice, btClass: BluetoothClass?) {
         if (classicDevices.add(device)) {
             deviceCallback?.onDeviceFound(device)
-            Log.i(TAG, "${device.name}: (${device.address})@${device.type}")
+            if (logEnabled) Log.i(TAG, "${device.name}: (${device.address})@${device.type}")
         }
     }
 
     override fun onScanComplete(type: Int) {
-        Log.i(TAG, "Scan complete $type")
+        if (logEnabled) Log.i(TAG, "Scan complete $type")
         if (leScanner.isScanning() || btScanner.isScanning()) return
         deviceCallback?.onComplete()
     }

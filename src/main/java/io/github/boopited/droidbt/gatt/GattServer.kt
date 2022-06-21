@@ -20,6 +20,8 @@ class GattServer(
         fun setDescriptor(uuid: UUID, value: ByteArray): Boolean
     }
 
+    var logEnabled = false
+
     /* Bluetooth API */
     private var bluetoothManager: BluetoothManager =
         context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -36,10 +38,10 @@ class GattServer(
 
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                Log.i(TAG, "BluetoothDevice CONNECTED: $device")
+                if (logEnabled) Log.i(TAG, "BluetoothDevice CONNECTED: $device")
                 serverCallback.onDeviceConnected(device)
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                Log.i(TAG, "BluetoothDevice DISCONNECTED: $device")
+                if (logEnabled) Log.i(TAG, "BluetoothDevice DISCONNECTED: $device")
                 serverCallback.onDeviceDisconnected(device)
                 //Remove device from any active subscriptions
                 registeredDevices.remove(device)
@@ -110,10 +112,10 @@ class GattServer(
         ) {
             if (serverCallback.isNotification(descriptor.uuid)) {
                 if (Arrays.equals(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE, value)) {
-                    Log.d(TAG, "Subscribe device to notifications: $device")
+                    if (logEnabled) Log.d(TAG, "Subscribe device to notifications: $device")
                     registeredDevices.add(device)
                 } else if (Arrays.equals(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE, value)) {
-                    Log.d(TAG, "Unsubscribe device from notifications: $device")
+                    if (logEnabled) Log.d(TAG, "Unsubscribe device from notifications: $device")
                     registeredDevices.remove(device)
                 }
             }
@@ -128,7 +130,7 @@ class GattServer(
         }
 
         override fun onNotificationSent(device: BluetoothDevice, status: Int) {
-            Log.i(TAG, "Notification sent $status")
+            if (logEnabled) Log.i(TAG, "Notification sent $status")
         }
     }
 
@@ -154,10 +156,10 @@ class GattServer(
 
     fun notifyDevices(service: UUID, characteristic: UUID, value: ByteArray) {
         if (registeredDevices.isEmpty()) {
-            Log.i(TAG, "No subscribers registered")
+            if (logEnabled) Log.i(TAG, "No subscribers registered")
             return
         }
-        Log.i(TAG, "Sending update to ${registeredDevices.size} subscribers")
+        if (logEnabled) Log.i(TAG, "Sending update to ${registeredDevices.size} subscribers")
         for (device in registeredDevices) {
             val data = bluetoothGattServer
                 ?.getService(service)

@@ -16,6 +16,8 @@ class ClassicDeviceScanner(
     private val callback: ResultCallback
 ): Scanner {
 
+    var logEnabled: Boolean =false
+
     private val bluetoothAdapter = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
     private val handler = Handler(Looper.getMainLooper())
     private var isScanning: Boolean = false

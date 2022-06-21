@@ -17,6 +17,8 @@ class GattClient(
         fun onDataAvailable(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic)
     }
 
+    var logEnabled = false
+
     private val bluetoothAdapter =
         (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
 
@@ -30,15 +32,15 @@ class GattClient(
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 connectionState = STATE_CONNECTED
+                if (logEnabled) Log.i(TAG, "Connected to GATT server.")
                 clientCallback?.onGattConnected(gatt)
-                Log.i(TAG, "Connected to GATT server.")
                 // Attempts to discover services after successful connection.
-                Log.i(TAG, "Attempting to start service discovery:")
+                if (logEnabled) Log.i(TAG, "Attempting to start service discovery:")
                 bluetoothGatt?.discoverServices()
 
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 connectionState = STATE_DISCONNECTED
-                Log.i(TAG, "Disconnected from GATT server.")
+                if (logEnabled) Log.i(TAG, "Disconnected from GATT server.")
                 clientCallback?.onGattDisconnected(gatt)
                 close()
             }
@@ -46,9 +48,10 @@ class GattClient(
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
+                if (logEnabled) Log.e(TAG, "onServicesDiscovered success: ${gatt.services}")
                 clientCallback?.onServiceDiscovered(gatt)
             } else {
-                Log.w(TAG, "onServicesDiscovered received: $status")
+                if (logEnabled) Log.e(TAG, "onServicesDiscovered received: $status")
             }
         }
 
@@ -73,7 +76,7 @@ class GattClient(
     fun connect(address: String): Boolean {
         // Previously connected device. Try to reconnect.
         if (deviceAddress != null && address == deviceAddress && bluetoothGatt != null) {
-            Log.d(TAG, "Trying to use an existing bluetoothGatt for connection.")
+            if (logEnabled) Log.d(TAG, "Trying to use an existing bluetoothGatt for connection.")
             if (connectionState == STATE_CONNECTED) {
                 return true
             } else if (bluetoothGatt?.connect() == true) {
@@ -86,13 +89,13 @@ class GattClient(
 
         val device = bluetoothAdapter?.getRemoteDevice(address)
         if (device == null) {
-            Log.w(TAG, "Device not found.  Unable to connect.")
+            Log.w(TAG, "Device not found. Unable to connect.")
             return false
         }
         // We want to directly connect to the device, so we are setting the autoConnect
         // parameter to false.
         bluetoothGatt = device.connectGatt(context, false, gattCallback)
-        Log.d(TAG, "Trying to create a new connection.")
+        if (logEnabled) Log.d(TAG, "Trying to create a new connection.")
         deviceAddress = address
         connectionState = STATE_CONNECTING
         return true
@@ -106,9 +109,10 @@ class GattClient(
      */
     fun disconnect() {
         if (bluetoothGatt == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized")
+            if (logEnabled) Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
+        if (logEnabled) Log.d(TAG, "Disconnecting the GATT.")
         bluetoothGatt?.disconnect()
     }
 
@@ -134,7 +138,7 @@ class GattClient(
      */
     fun readCharacteristic(characteristic: BluetoothGattCharacteristic) {
         if (bluetoothAdapter == null || bluetoothGatt == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized")
+            if (logEnabled) Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
         bluetoothGatt?.readCharacteristic(characteristic)
@@ -152,7 +156,7 @@ class GattClient(
         enabled: Boolean
     ) {
         if (bluetoothGatt == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized")
+            if (logEnabled) Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
         bluetoothGatt?.setCharacteristicNotification(characteristic, enabled)

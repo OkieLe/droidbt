@@ -16,6 +16,14 @@ abstract class BaseManager(protected val context: Context) {
 
     private val stateCallbacks = mutableListOf<StateCallback>()
 
+    var logEnabled = false
+    set(value) {
+        field = value
+        onLogEnabled(value)
+    }
+
+    open fun onLogEnabled(enable: Boolean) {}
+
     init {
         // We can't continue without proper Bluetooth support
         check(BluetoothUtils.checkBluetoothSupport(context, bluetoothAdapter))

@@ -50,13 +50,13 @@ class PeripheralManager(
      */
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
-            Log.i(TAG, "LE Advertise Started.")
+            if (logEnabled) Log.i(TAG, "LE Advertise Started.")
             isAdvertising = true
         }
 
         override fun onStartFailure(errorCode: Int) {
             isAdvertising = false
-            Log.w(TAG, "LE Advertise Failed: $errorCode")
+            if (logEnabled) Log.i(TAG, "LE Advertise Failed: $errorCode")
         }
     }
 

@@ -16,6 +16,8 @@ class LeDeviceScanner(
     private val nameFilter: String? = null
 ): Scanner {
 
+    var logEnabled = false
+
     private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     private val handler = Handler(Looper.getMainLooper())
     private var isScanning: Boolean = false
