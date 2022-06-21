@@ -31,7 +31,7 @@ class CentralManager(
     )
 
     private var leScanner: LeDeviceScanner = LeDeviceScanner(
-        bluetoothAdapter.bluetoothLeScanner,
+        context, bluetoothAdapter.bluetoothLeScanner,
         this, filterUUID, nameFilter
     )
 
@@ -63,7 +63,7 @@ class CentralManager(
         }
     }
 
-    override fun onDeviceFound(device: BluetoothDevice, btClass: BluetoothClass) {
+    override fun onDeviceFound(device: BluetoothDevice, btClass: BluetoothClass?) {
         if (classicDevices.add(device)) {
             deviceCallback?.onDeviceFound(device)
             Log.i(TAG, "${device.name}: (${device.address})@${device.type}")
@@ -82,6 +82,6 @@ class CentralManager(
     }
 
     companion object {
-        private const val TAG = "MasterManager"
+        private const val TAG = "CentralManager"
     }
 }

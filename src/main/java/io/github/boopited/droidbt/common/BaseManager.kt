@@ -1,6 +1,7 @@
 package io.github.boopited.droidbt.common
 
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -9,7 +10,8 @@ import androidx.annotation.CallSuper
 
 abstract class BaseManager(protected val context: Context) {
 
-    protected val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+    protected val bluetoothAdapter =
+        (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
 
     init {
         // We can't continue without proper Bluetooth support

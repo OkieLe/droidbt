@@ -3,18 +3,21 @@ package io.github.boopited.droidbt.scanner
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Handler
+import android.os.Looper
 
-class ClassicDeviceScanner(private val context: Context,
-                           private val callback: ResultCallback
+class ClassicDeviceScanner(
+    private val context: Context,
+    private val callback: ResultCallback
 ): Scanner {
 
-    private val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-    private val handler = Handler()
+    private val bluetoothAdapter = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+    private val handler = Handler(Looper.getMainLooper())
     private var isScanning: Boolean = false
 
     private val receiver = object : BroadcastReceiver() {
@@ -22,10 +25,10 @@ class ClassicDeviceScanner(private val context: Context,
             when (intent?.action) {
                 BluetoothDevice.ACTION_FOUND -> {
                     val device = intent
-                        .getParcelableExtra(BluetoothDevice.EXTRA_DEVICE) as BluetoothDevice
+                        .getParcelableExtra(BluetoothDevice.EXTRA_DEVICE) as BluetoothDevice?
                     val btClass = intent
-                        .getParcelableExtra(BluetoothDevice.EXTRA_CLASS) as BluetoothClass
-                    callback.onDeviceFound(device, btClass)
+                        .getParcelableExtra(BluetoothDevice.EXTRA_CLASS) as BluetoothClass?
+                    device?.let { callback.onDeviceFound(it, btClass) }
                 }
                 BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
                     isScanning = true

@@ -17,7 +17,8 @@ class GattClient(
         fun onDataAvailable(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic)
     }
 
-    private val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+    private val bluetoothAdapter =
+        (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
 
     private var deviceAddress: String? = null
     private var bluetoothGatt: BluetoothGatt? = null

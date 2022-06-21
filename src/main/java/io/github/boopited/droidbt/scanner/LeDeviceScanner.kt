@@ -1,19 +1,23 @@
 package io.github.boopited.droidbt.scanner
 
-import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
 import android.bluetooth.le.*
+import android.content.Context
 import android.os.Handler
+import android.os.Looper
 import android.os.ParcelUuid
 import java.util.*
 
 class LeDeviceScanner(
+    private val context: Context,
     private val scanner: BluetoothLeScanner,
     private val resultCallback: ResultCallback,
     private val filterUUID: UUID? = null,
     private val nameFilter: String? = null
 ): Scanner {
 
-    private val handler = Handler()
+    private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    private val handler = Handler(Looper.getMainLooper())
     private var isScanning: Boolean = false
 
     private val scanSettings = ScanSettings.Builder()
@@ -21,7 +25,7 @@ class LeDeviceScanner(
         .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
         .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
         .apply {
-            if (BluetoothAdapter.getDefaultAdapter().isOffloadedScanBatchingSupported)
+            if (bluetoothManager.adapter.isOffloadedScanBatchingSupported)
                 setReportDelay(0L)
         }.build()
     private val scannerCallback = object : ScanCallback() {

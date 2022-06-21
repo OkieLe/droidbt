@@ -12,7 +12,7 @@ interface ResultCallback {
     ) {}
     fun onDeviceFound(
         device: BluetoothDevice,
-        btClass: BluetoothClass
+        btClass: BluetoothClass?
     ) {}
     fun onScanComplete(type: Int)
 }

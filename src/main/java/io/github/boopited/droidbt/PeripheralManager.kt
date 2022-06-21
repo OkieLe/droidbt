@@ -1,5 +1,6 @@
 package io.github.boopited.droidbt
 
+import android.Manifest
 import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
@@ -8,6 +9,7 @@ import android.content.Context
 import android.os.ParcelUuid
 import android.util.Log
 import io.github.boopited.droidbt.common.BaseManager
+import io.github.boopited.droidbt.common.BluetoothUtils
 import java.util.*
 
 class PeripheralManager(
@@ -80,7 +82,9 @@ class PeripheralManager(
                 .addServiceUuid(ParcelUuid(advertiseUuid))
                 .build()
 
-            it.startAdvertising(settings, data, advertiseCallback)
+            if (BluetoothUtils.hasPermission(context, Manifest.permission.BLUETOOTH_ADVERTISE)) {
+                it.startAdvertising(settings, data, advertiseCallback)
+            }
         } ?: Log.w(TAG, "Failed to create advertiser")
     }
 
@@ -90,12 +94,14 @@ class PeripheralManager(
     private fun stopAdvertising() {
         val bluetoothLeAdvertiser: BluetoothLeAdvertiser? =
             bluetoothAdapter.bluetoothLeAdvertiser
-        bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback)
-            ?: Log.w(TAG, "Failed to create advertiser")
-        isAdvertising = false
+        if (BluetoothUtils.hasPermission(context, Manifest.permission.BLUETOOTH_ADVERTISE)) {
+            bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback)
+                ?: Log.w(TAG, "Failed to create advertiser")
+            isAdvertising = false
+        }
     }
 
     companion object {
-        private const val TAG = "SlaveManager"
+        private const val TAG = "PeripheralManager"
     }
 }
