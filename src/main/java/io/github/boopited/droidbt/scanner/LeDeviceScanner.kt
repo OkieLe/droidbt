@@ -9,13 +9,13 @@ import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import java.util.*
+import java.util.UUID
 
 class LeDeviceScanner(
     context: Context,
-    private val scanner: BluetoothLeScanner,
     private val resultCallback: ResultCallback,
-    private val deviceFilter: DeviceFilter = DeviceFilter.default()
+    private val deviceFilter: DeviceFilter = DeviceFilter.default(),
+    private val monitorMode: Boolean = false
 ): Scanner {
 
     interface DeviceFilter {
@@ -41,6 +41,7 @@ class LeDeviceScanner(
     var logEnabled = false
 
     private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    private val scanner: BluetoothLeScanner = bluetoothManager.adapter.bluetoothLeScanner
     private val handler = Handler(Looper.getMainLooper())
     private var isScanning: Boolean = false
 
@@ -90,10 +91,12 @@ class LeDeviceScanner(
             scanSettings,
             scannerCallback
         )
-        handler.postDelayed({
-            stopScan()
-            resultCallback.onScanComplete(getType())
-        }, TIMEOUT_FOR_STOP)
+        if (!monitorMode) {
+            handler.postDelayed({
+                stopScan()
+                resultCallback.onScanComplete(getType())
+            }, TIMEOUT_FOR_STOP)
+        }
     }
 
     override fun stopScan() {

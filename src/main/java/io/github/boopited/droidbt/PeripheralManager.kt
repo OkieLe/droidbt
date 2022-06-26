@@ -10,7 +10,7 @@ import android.os.ParcelUuid
 import android.util.Log
 import io.github.boopited.droidbt.common.BaseManager
 import io.github.boopited.droidbt.common.BluetoothUtils
-import java.util.*
+import java.util.UUID
 
 class PeripheralManager(
     context: Context,

@@ -24,8 +24,7 @@ class DeviceFinder(
     )
 
     private var leScanner: LeDeviceScanner = LeDeviceScanner(
-        context, bluetoothAdapter.bluetoothLeScanner,
-        this,
+        context, this,
         if (serviceUUID != null) LeDeviceScanner.DeviceFilter.forService(serviceUUID)
         else LeDeviceScanner.DeviceFilter.default()
     )
