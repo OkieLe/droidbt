@@ -39,6 +39,7 @@ class PeripheralManager(
     }
 
     override fun onBluetoothEnabled(enable: Boolean) {
+        super.onBluetoothEnabled(enable)
         if (!enable) {
             stopAdvertising()
             isAdvertising = false

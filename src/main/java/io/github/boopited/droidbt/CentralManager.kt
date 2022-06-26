@@ -1,22 +1,17 @@
 package io.github.boopited.droidbt
 
-import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanRecord
 import android.content.Context
 import android.util.Log
 import io.github.boopited.droidbt.common.BaseManager
-import io.github.boopited.droidbt.scanner.ClassicDeviceScanner
-import io.github.boopited.droidbt.scanner.LeDeviceScanner
 import io.github.boopited.droidbt.scanner.ResultCallback
 import java.util.*
 
 class CentralManager(
     context: Context,
-    private var deviceCallback: DeviceCallback? = null,
-    filterUUID: UUID? = null,
-    nameFilter: String? = null,
-    private val leOnly: Boolean = true
+    private val serviceUUID: UUID,
+    private var deviceCallback: DeviceCallback? = null
 ) : BaseManager(context), ResultCallback {
 
     interface DeviceCallback {
@@ -25,34 +20,22 @@ class CentralManager(
         fun onFailed(error: Int)
     }
 
-    private var btScanner: ClassicDeviceScanner = ClassicDeviceScanner(
-        context,
-        this
-    )
+    private var deviceFinder: DeviceFinder = DeviceFinder(context, this, serviceUUID)
 
-    private var leScanner: LeDeviceScanner = LeDeviceScanner(
-        context, bluetoothAdapter.bluetoothLeScanner,
-        this, filterUUID, nameFilter
-    )
-
-    private val classicDevices: MutableSet<BluetoothDevice> = mutableSetOf()
     private val leDevices: MutableSet<BluetoothDevice> = mutableSetOf()
 
     override fun onLogEnabled(enable: Boolean) {
         super.onLogEnabled(enable)
-        btScanner.logEnabled = enable
-        leScanner.logEnabled = enable
+        deviceFinder.logEnabled = enable
     }
 
     override fun start() {
         super.start()
-        if (!leOnly) btScanner.startScan()
-        leScanner.startScan()
+        deviceFinder.start()
     }
 
     override fun stop() {
-        if (!leOnly) btScanner.stopScan()
-        leScanner.stopScan()
+        deviceFinder.stop()
         super.stop()
     }
 
@@ -66,16 +49,9 @@ class CentralManager(
         }
     }
 
-    override fun onDeviceFound(device: BluetoothDevice, btClass: BluetoothClass?) {
-        if (classicDevices.add(device)) {
-            deviceCallback?.onDeviceFound(device)
-            if (logEnabled) Log.i(TAG, "${device.name}: (${device.address})@${device.type}")
-        }
-    }
-
     override fun onScanComplete(type: Int) {
         if (logEnabled) Log.i(TAG, "Scan complete $type")
-        if (leScanner.isScanning() || btScanner.isScanning()) return
+        if (deviceFinder.isScanning()) return
         deviceCallback?.onComplete()
     }
 

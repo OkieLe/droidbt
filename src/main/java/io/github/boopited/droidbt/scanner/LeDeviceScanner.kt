@@ -1,20 +1,42 @@
 package io.github.boopited.droidbt.scanner
 
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
-import android.bluetooth.le.*
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import android.os.ParcelUuid
 import java.util.*
 
 class LeDeviceScanner(
-    private val context: Context,
+    context: Context,
     private val scanner: BluetoothLeScanner,
     private val resultCallback: ResultCallback,
-    private val filterUUID: UUID? = null,
-    private val nameFilter: String? = null
+    private val deviceFilter: DeviceFilter = DeviceFilter.default()
 ): Scanner {
+
+    interface DeviceFilter {
+        fun matches(scanResult: ScanResult): Boolean
+        companion object {
+            fun default(): DeviceFilter {
+                return object : DeviceFilter {
+                    override fun matches(scanResult: ScanResult): Boolean = true
+                }
+            }
+            fun forService(serviceUUID: UUID): DeviceFilter {
+                return object : DeviceFilter {
+                    override fun matches(scanResult: ScanResult): Boolean {
+                        return scanResult.scanRecord?.serviceUuids?.any { service ->
+                            service.uuid.toString() == serviceUUID.toString()
+                        } == true
+                    }
+                }
+            }
+        }
+    }
 
     var logEnabled = false
 
@@ -33,19 +55,16 @@ class LeDeviceScanner(
     private val scannerCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult?) {
             super.onScanResult(callbackType, result)
-            result?.device?.let {
-                if (filterUUID == null || result.scanRecord?.serviceUuids?.any { service ->
-                        service.uuid.toString() == filterUUID.toString() } == true
-                    || (nameFilter != null && it.name?.startsWith(nameFilter) == true))
-                    resultCallback.onLeDeviceFound(it, result.scanRecord)
+            result?.device?.let { device ->
+                if (deviceFilter.matches(result))
+                    resultCallback.onLeDeviceFound(device, result.scanRecord)
             }
         }
 
         override fun onBatchScanResults(results: MutableList<ScanResult>?) {
             super.onBatchScanResults(results)
             results?.map {
-                if (filterUUID == null || it.scanRecord?.serviceUuids?.
-                        contains(ParcelUuid(filterUUID)) == true)
+                if (deviceFilter.matches(it))
                     resultCallback.onLeDeviceFound(it.device, it.scanRecord)
             }
         }
@@ -58,7 +77,7 @@ class LeDeviceScanner(
     }
 
     override fun getType(): Int {
-        return 2
+        return BluetoothDevice.DEVICE_TYPE_LE
     }
 
     override fun isScanning() = isScanning
@@ -85,6 +104,6 @@ class LeDeviceScanner(
     }
 
     companion object {
-        private const val TIMEOUT_FOR_STOP = 12000L
+        private const val TIMEOUT_FOR_STOP = 20000L
     }
 }

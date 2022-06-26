@@ -13,12 +13,29 @@ import android.os.Looper
 
 class ClassicDeviceScanner(
     private val context: Context,
-    private val callback: ResultCallback
-): Scanner {
+    private val callback: ResultCallback,
+    private val deviceFilter: DeviceFilter = DeviceFilter.default()
+) : Scanner {
 
-    var logEnabled: Boolean =false
+    interface DeviceFilter {
+        fun matches(device: BluetoothDevice, btClass: BluetoothClass?): Boolean
 
-    private val bluetoothAdapter = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+        companion object {
+            fun default(): DeviceFilter {
+                return object : DeviceFilter {
+                    override fun matches(
+                        device: BluetoothDevice,
+                        btClass: BluetoothClass?
+                    ): Boolean = true
+                }
+            }
+        }
+    }
+
+    var logEnabled: Boolean = false
+
+    private val bluetoothAdapter =
+        (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
     private val handler = Handler(Looper.getMainLooper())
     private var isScanning: Boolean = false
 
@@ -30,7 +47,11 @@ class ClassicDeviceScanner(
                         .getParcelableExtra(BluetoothDevice.EXTRA_DEVICE) as BluetoothDevice?
                     val btClass = intent
                         .getParcelableExtra(BluetoothDevice.EXTRA_CLASS) as BluetoothClass?
-                    device?.let { callback.onDeviceFound(it, btClass) }
+                    device?.takeIf {
+                        deviceFilter.matches(it, btClass)
+                    }?.let {
+                        callback.onDeviceFound(it, btClass)
+                    }
                 }
                 BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
                     isScanning = true
@@ -58,7 +79,7 @@ class ClassicDeviceScanner(
     }
 
     override fun getType(): Int {
-        return 1
+        return BluetoothDevice.DEVICE_TYPE_CLASSIC
     }
 
     override fun isScanning() = isScanning
@@ -70,11 +91,15 @@ class ClassicDeviceScanner(
         handler.postDelayed({
             stopScan()
             callback.onScanComplete(getType())
-        }, 12000)
+        }, SCAN_TIMEOUT)
     }
 
     override fun stopScan() {
         if (!isScanning) return
         bluetoothAdapter.cancelDiscovery()
+    }
+
+    companion object {
+        private const val SCAN_TIMEOUT: Long = 15000
     }
 }
