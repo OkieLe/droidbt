@@ -82,6 +82,7 @@ class PeripheralManager(
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
                 .apply {
+                    services.keys.forEach { addServiceUuid(ParcelUuid.fromString(it)) }
                     services.forEach { addServiceData(ParcelUuid.fromString(it.key), it.value) }
                     manufactures.forEach { addManufacturerData(it.key, it.value) }
                 }
