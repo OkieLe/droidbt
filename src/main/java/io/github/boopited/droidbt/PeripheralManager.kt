@@ -14,7 +14,8 @@ import java.util.UUID
 
 class PeripheralManager(
     context: Context,
-    private val advertiseUuid: UUID
+    private val services: Map<String, ByteArray>,
+    private val manufactures: Map<Int, ByteArray>
 ): BaseManager(context) {
 
     private var bluetoothLeAdvertiser: BluetoothLeAdvertiser? = null
@@ -69,7 +70,7 @@ class PeripheralManager(
         if (bluetoothLeAdvertiser == null)
             bluetoothLeAdvertiser = bluetoothAdapter.bluetoothLeAdvertiser
 
-        bluetoothLeAdvertiser?.let {
+        bluetoothLeAdvertiser?.let { advertiser ->
             val settings = AdvertiseSettings.Builder()
                 .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
                 .setConnectable(true)
@@ -80,11 +81,14 @@ class PeripheralManager(
             val data = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
-                .addServiceUuid(ParcelUuid(advertiseUuid))
+                .apply {
+                    services.forEach { addServiceData(ParcelUuid.fromString(it.key), it.value) }
+                    manufactures.forEach { addManufacturerData(it.key, it.value) }
+                }
                 .build()
 
             if (BluetoothUtils.hasPermission(context, Manifest.permission.BLUETOOTH_ADVERTISE)) {
-                it.startAdvertising(settings, data, advertiseCallback)
+                advertiser.startAdvertising(settings, data, advertiseCallback)
             }
         } ?: Log.w(TAG, "Failed to create advertiser")
     }
