@@ -10,12 +10,11 @@ import android.os.ParcelUuid
 import android.util.Log
 import io.github.boopited.droidbt.common.BaseManager
 import io.github.boopited.droidbt.common.BluetoothUtils
-import java.util.UUID
 
 class PeripheralManager(
     context: Context,
-    private val services: Map<String, ByteArray>,
-    private val manufactures: Map<Int, ByteArray>
+    private val services: Map<String, ByteArray> = emptyMap(),
+    private val manufactures: Map<Int, ByteArray> = emptyMap()
 ): BaseManager(context) {
 
     private var bluetoothLeAdvertiser: BluetoothLeAdvertiser? = null
