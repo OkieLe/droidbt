@@ -55,21 +55,60 @@ class GattClient(
             }
         }
 
-        override fun onCharacteristicRead(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            status: Int
-        ) {
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                clientCallback?.onDataAvailable(gatt, characteristic)
-            }
+        override fun onServiceChanged(gatt: BluetoothGatt) {
+            super.onServiceChanged(gatt)
+            if (logEnabled) Log.i(TAG, "Service changed ${gatt.services}.")
         }
 
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
         ) {
+            if (logEnabled) Log.i(TAG, "Data changed for ${characteristic.uuid}.")
             clientCallback?.onDataAvailable(gatt, characteristic)
+        }
+
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
+        ) {
+            if (logEnabled) Log.i(TAG, "Read characteristic(${characteristic.uuid}) done $status.")
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                clientCallback?.onDataAvailable(gatt, characteristic)
+            }
+        }
+
+        override fun onCharacteristicWrite(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
+        ) {
+            super.onCharacteristicWrite(gatt, characteristic, status)
+            if (logEnabled) Log.i(TAG, "Write characteristic(${characteristic.uuid}) done $status.")
+        }
+
+        override fun onDescriptorRead(
+            gatt: BluetoothGatt,
+            descriptor: BluetoothGattDescriptor?,
+            status: Int
+        ) {
+            super.onDescriptorRead(gatt, descriptor, status)
+            if (logEnabled) Log.i(TAG, "Read descriptor(${descriptor?.uuid}) done $status.")
+        }
+
+        override fun onDescriptorWrite(
+            gatt: BluetoothGatt,
+            descriptor: BluetoothGattDescriptor,
+            status: Int
+        ) {
+            super.onDescriptorWrite(gatt, descriptor, status)
+            if (logEnabled) Log.i(TAG, "Write descriptor(${descriptor.uuid}) done $status.")
+        }
+
+        override fun onReliableWriteCompleted(gatt: BluetoothGatt, status: Int) {
+            super.onReliableWriteCompleted(gatt, status)
+            if (logEnabled) Log.i(TAG, "Reliable write to (${gatt.device.address}) done $status.")
         }
     }
 
@@ -125,10 +164,6 @@ class GattClient(
         bluetoothGatt = null
     }
 
-    fun sameAs(other: BluetoothGatt): Boolean {
-        return deviceAddress == other.device.address
-    }
-
     /**
      * Request a read on a given `BluetoothGattCharacteristic`. The read result is reported
      * asynchronously through the `BluetoothGattCallback#onCharacteristicRead(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)`
@@ -136,12 +171,36 @@ class GattClient(
      *
      * @param characteristic The characteristic to read from.
      */
-    fun readCharacteristic(characteristic: BluetoothGattCharacteristic) {
+    fun readCharacteristic(characteristic: BluetoothGattCharacteristic): Boolean {
+        if (bluetoothAdapter == null || bluetoothGatt == null) {
+            if (logEnabled) Log.w(TAG, "BluetoothAdapter not initialized")
+            return false
+        }
+        return bluetoothGatt?.readCharacteristic(characteristic) ?: false
+    }
+
+    fun writeCharacteristic(characteristic: BluetoothGattCharacteristic) {
         if (bluetoothAdapter == null || bluetoothGatt == null) {
             if (logEnabled) Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
-        bluetoothGatt?.readCharacteristic(characteristic)
+        bluetoothGatt?.writeCharacteristic(characteristic)
+    }
+
+    fun readDescriptor(descriptor: BluetoothGattDescriptor): Boolean {
+        if (bluetoothAdapter == null || bluetoothGatt == null) {
+            if (logEnabled) Log.w(TAG, "BluetoothAdapter not initialized")
+            return false
+        }
+        return bluetoothGatt?.readDescriptor(descriptor) ?: false
+    }
+
+    fun writeDescriptor(descriptor: BluetoothGattDescriptor) {
+        if (bluetoothAdapter == null || bluetoothGatt == null) {
+            if (logEnabled) Log.w(TAG, "BluetoothAdapter not initialized")
+            return
+        }
+        bluetoothGatt?.writeDescriptor(descriptor)
     }
 
     /**
@@ -159,11 +218,36 @@ class GattClient(
             if (logEnabled) Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
-        bluetoothGatt?.setCharacteristicNotification(characteristic, enabled)
+        val done = bluetoothGatt?.setCharacteristicNotification(characteristic, enabled)
+        if (logEnabled) Log.w(TAG, "Notification for ${characteristic.uuid} enabled")
 
+        // todo: if this is necessary
         val descriptor = characteristic.getDescriptor(descriptorId)
         descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
         bluetoothGatt?.writeDescriptor(descriptor)
+    }
+
+    fun reliableWrite(writeAction: () -> Boolean): Boolean {
+        if (bluetoothAdapter == null || bluetoothGatt == null) {
+            if (logEnabled) Log.w(TAG, "BluetoothAdapter not initialized")
+            return false
+        }
+        val done = if (bluetoothGatt?.beginReliableWrite() == true) {
+            writeAction()
+        } else {
+            return false
+        }
+        return if (done) bluetoothGatt?.executeReliableWrite() ?: false
+        else false.also { bluetoothGatt?.abortReliableWrite() }
+    }
+
+    /**
+     * Whether we're connecting to a BluetoothGatt
+     *
+     * @param gatt a BluetoothGatt
+     */
+    fun isConnectedTo(gatt: BluetoothGatt): Boolean {
+        return deviceAddress == gatt.device.address
     }
 
     /**
